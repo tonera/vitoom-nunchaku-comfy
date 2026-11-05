@@ -60,6 +60,26 @@ def wheel_filename(version: str) -> str:
     return f"nunchaku-{version}+{cuda}{torch_tag}-{py}-{py}-{_platform_tag()}.whl"
 
 
+def _distribution_tag(version: str) -> str:
+    cuda, torch_tag = _torch_facts()
+    return f"{version}+{cuda}{torch_tag}"
+
+
+def _already_installed(version: str) -> bool:
+    """True when this environment already has the wheel this script would install."""
+    try:
+        installed = metadata.version("nunchaku")
+    except metadata.PackageNotFoundError:
+        return False
+    if installed != _distribution_tag(version):
+        return False
+    try:
+        import nunchaku._C  # noqa: F401  ABI is exposed only when the extension is imported
+    except Exception:
+        return False
+    return True
+
+
 def _closest(files: list[str], wanted: str) -> list[str]:
     py = f"cp{sys.version_info.major}{sys.version_info.minor}"
     wheels = [name for name in files if name.endswith(".whl") and "nunchaku" in name]
@@ -134,10 +154,16 @@ def main() -> None:
     parser.add_argument("--skip-requirements", action="store_true", help="Install only the wheel, not diffusers and the other dependencies")
     args = parser.parse_args()
 
+    wheel = None
     if args.wheel:
         wheel = str(Path(args.wheel).expanduser().resolve())
         if not Path(wheel).is_file():
             raise SystemExit(f"Wheel not found: {wheel}")
+    elif _already_installed(args.version):
+        print(
+            f"nunchaku {metadata.version('nunchaku')} already matches this Python, torch, and CUDA. Skipping the wheel download.",
+            flush=True,
+        )
     else:
         try:
             wheel = _resolve_wheel(args.version, args.mirror)
@@ -151,7 +177,8 @@ def main() -> None:
                 raise SystemExit(str(exc2)) from exc2
 
     before = {name: metadata.version(name) for name in ("transformers", "huggingface_hub") if _installed(name)}
-    _run([sys.executable, "-m", "pip", "install", "--no-deps", wheel])
+    if wheel is not None:
+        _run([sys.executable, "-m", "pip", "install", "--no-deps", wheel])
     if not args.skip_requirements:
         requirements = Path(__file__).resolve().parents[1] / "requirements.txt"
         command = [sys.executable, "-m", "pip", "install", "-r", str(requirements)]
