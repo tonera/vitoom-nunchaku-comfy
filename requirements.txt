@@ -1,0 +1,4 @@
+diffusers>=0.41
+accelerate>=1.10
+peft>=0.20
+protobuf

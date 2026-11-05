@@ -1,0 +1,762 @@
+{
+  "id": "vitoom-flux1-fill",
+  "revision": 0,
+  "last_node_id": 14,
+  "last_link_id": 16,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "VitoomNunchakuDiTLoader",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        560,
+        210
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VitoomNunchakuDiTLoader"
+      },
+      "widgets_values": [
+        "svdq-fp4_r32-flux.1-fill-dev.safetensors [nvfp4 r32]",
+        "default",
+        "auto",
+        "comfy",
+        false
+      ],
+      "widgets_values_named": {
+        "model_name": "svdq-fp4_r32-flux.1-fill-dev.safetensors [nvfp4 r32]",
+        "device": "default",
+        "dtype": "auto",
+        "attention": "comfy",
+        "disable_dynamic_vram": false
+      }
+    },
+    {
+      "id": 2,
+      "type": "VitoomNunchakuFluxClipLoader",
+      "pos": [
+        40,
+        290
+      ],
+      "size": [
+        520,
+        150
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "slot_index": 0,
+          "links": [
+            2,
+            3
+          ]
+        }
+      ],
+      "title": "AWQ T5-XXL + CLIP-L",
+      "properties": {
+        "Node name for S&R": "VitoomNunchakuFluxClipLoader"
+      },
+      "widgets_values": [
+        "awq-int4-flux.1-t5xxl.safetensors [awq t5xxl]",
+        "oneObsession_v18_clip_l.safetensors",
+        "default"
+      ],
+      "widgets_values_named": {
+        "t5_name": "awq-int4-flux.1-t5xxl.safetensors [awq t5xxl]",
+        "clip_l_name": "oneObsession_v18_clip_l.safetensors",
+        "device": "default"
+      }
+    },
+    {
+      "id": 3,
+      "type": "VAELoader",
+      "pos": [
+        40,
+        480
+      ],
+      "size": [
+        420,
+        90
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            10,
+            12
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "z_image_turbo_vae.safetensors"
+      ],
+      "widgets_values_named": {
+        "vae_name": "z_image_turbo_vae.safetensors"
+      }
+    },
+    {
+      "id": 4,
+      "type": "CLIPTextEncode",
+      "pos": [
+        640,
+        40
+      ],
+      "size": [
+        420,
+        180
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 2
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            4
+          ]
+        }
+      ],
+      "title": "正面提示词",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        "a wooden crate full of green apples on a white picnic table"
+      ],
+      "widgets_values_named": {
+        "text": "a wooden crate full of green apples on a white picnic table"
+      }
+    },
+    {
+      "id": 5,
+      "type": "CLIPTextEncode",
+      "pos": [
+        640,
+        260
+      ],
+      "size": [
+        420,
+        140
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 3
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            14
+          ]
+        }
+      ],
+      "title": "负面提示词",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        ""
+      ],
+      "widgets_values_named": {
+        "text": ""
+      }
+    },
+    {
+      "id": 6,
+      "type": "FluxGuidance",
+      "pos": [
+        1100,
+        40
+      ],
+      "size": [
+        280,
+        80
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            13
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "FluxGuidance"
+      },
+      "widgets_values": [
+        30
+      ],
+      "widgets_values_named": {
+        "guidance": 30
+      }
+    },
+    {
+      "id": 8,
+      "type": "ModelSamplingFlux",
+      "pos": [
+        1100,
+        160
+      ],
+      "size": [
+        280,
+        170
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            8
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ModelSamplingFlux"
+      },
+      "widgets_values": [
+        1.15,
+        0.5,
+        1024,
+        1024
+      ],
+      "widgets_values_named": {
+        "max_shift": 1.15,
+        "base_shift": 0.5,
+        "width": 1024,
+        "height": 1024
+      }
+    },
+    {
+      "id": 9,
+      "type": "KSampler",
+      "pos": [
+        1440,
+        40
+      ],
+      "size": [
+        320,
+        360
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 8
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 5
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 6
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "slot_index": 0,
+          "links": [
+            9
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        1,
+        "fixed",
+        50,
+        1,
+        "euler",
+        "simple",
+        1
+      ],
+      "widgets_values_named": {
+        "seed": 1,
+        "control_after_generate": "fixed",
+        "steps": 50,
+        "cfg": 1,
+        "sampler_name": "euler",
+        "scheduler": "simple",
+        "denoise": 1
+      }
+    },
+    {
+      "id": 10,
+      "type": "VAEDecode",
+      "pos": [
+        1820,
+        40
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 9
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            11
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 11,
+      "type": "SaveImage",
+      "pos": [
+        2100,
+        40
+      ],
+      "size": [
+        340,
+        420
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 11
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "vitoom_flux1_fill"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "vitoom_flux1_fill"
+      }
+    },
+    {
+      "id": 12,
+      "type": "LoadImage",
+      "pos": [
+        640,
+        500
+      ],
+      "size": [
+        320,
+        320
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            15
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 1,
+          "links": []
+        }
+      ],
+      "title": "原图",
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "flux_fill_example.png",
+        "image"
+      ],
+      "widgets_values_named": {
+        "image": "flux_fill_example.png",
+        "upload": "image"
+      }
+    },
+    {
+      "id": 13,
+      "type": "InpaintModelConditioning",
+      "pos": [
+        1100,
+        280
+      ],
+      "size": [
+        320,
+        150
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 13
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 14
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 12
+        },
+        {
+          "name": "pixels",
+          "type": "IMAGE",
+          "link": 15
+        },
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 16
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            5
+          ]
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "slot_index": 1,
+          "links": [
+            6
+          ]
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "slot_index": 2,
+          "links": [
+            7
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "InpaintModelConditioning"
+      },
+      "widgets_values": [
+        false
+      ],
+      "title": "补全条件",
+      "widgets_values_named": {
+        "noise_mask": false
+      }
+    },
+    {
+      "id": 14,
+      "type": "LoadImageMask",
+      "pos": [
+        640,
+        860
+      ],
+      "size": [
+        320,
+        140
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "slot_index": 0,
+          "links": [
+            16
+          ]
+        }
+      ],
+      "title": "遮罩",
+      "properties": {
+        "Node name for S&R": "LoadImageMask"
+      },
+      "widgets_values": [
+        "flux_fill_mask.png",
+        "image",
+        "red"
+      ],
+      "widgets_values_named": {
+        "image": "flux_fill_mask.png",
+        "upload": "image",
+        "channel": "red"
+      }
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      8,
+      0,
+      "MODEL"
+    ],
+    [
+      2,
+      2,
+      0,
+      4,
+      0,
+      "CLIP"
+    ],
+    [
+      3,
+      2,
+      0,
+      5,
+      0,
+      "CLIP"
+    ],
+    [
+      4,
+      4,
+      0,
+      6,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      8,
+      8,
+      0,
+      9,
+      0,
+      "MODEL"
+    ],
+    [
+      9,
+      9,
+      0,
+      10,
+      0,
+      "LATENT"
+    ],
+    [
+      10,
+      3,
+      0,
+      10,
+      1,
+      "VAE"
+    ],
+    [
+      11,
+      10,
+      0,
+      11,
+      0,
+      "IMAGE"
+    ],
+    [
+      5,
+      13,
+      0,
+      9,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      6,
+      13,
+      1,
+      9,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      7,
+      13,
+      2,
+      9,
+      3,
+      "LATENT"
+    ],
+    [
+      12,
+      3,
+      0,
+      13,
+      2,
+      "VAE"
+    ],
+    [
+      13,
+      6,
+      0,
+      13,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      14,
+      5,
+      0,
+      13,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      15,
+      12,
+      0,
+      13,
+      3,
+      "IMAGE"
+    ],
+    [
+      16,
+      14,
+      0,
+      13,
+      4,
+      "MASK"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "frontendVersion": "1.58.5",
+    "ds": {
+      "scale": 0.7,
+      "offset": [
+        20,
+        20
+      ]
+    }
+  },
+  "version": 0.4
+}
