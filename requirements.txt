@@ -1,4 +1,4 @@
-diffusers>=0.41
+diffusers>=0.42
 accelerate>=1.10
 peft>=0.20
 protobuf

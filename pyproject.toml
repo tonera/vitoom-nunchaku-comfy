@@ -1,11 +1,11 @@
 [project]
 name = "vitoom-nunchaku-comfy"
-description = "Load tonera nunchaku SVDQuant DiT checkpoints in ComfyUI"
+description = "Load tonera vitoom-nunchaku SVDQuant DiT checkpoints in ComfyUI"
 version = "0.1.0"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 dependencies = [
-    "diffusers>=0.41",
+    "diffusers>=0.42",
     "accelerate>=1.10",
     "peft>=0.20",
     "protobuf",
@@ -17,4 +17,5 @@ Repository = "https://github.com/tonera/vitoom-nunchaku-comfy"
 [tool.comfy]
 PublisherId = "tonera"
 DisplayName = "Vitoom Nunchaku"
-Icon = ""
+Icon = "https://raw.githubusercontent.com/tonera/vitoom-nunchaku-comfy/main/assets/icon.jpg"
+Banner = "https://raw.githubusercontent.com/tonera/vitoom-nunchaku-comfy/main/assets/banner.jpg"
