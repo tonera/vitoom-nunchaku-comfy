@@ -75,6 +75,10 @@ def _closest(files: list[str], wanted: str) -> list[str]:
     return [name for _, name in ranked[:12]]
 
 
+class WheelLookupError(RuntimeError):
+    """The wheel list could not be read from Hugging Face."""
+
+
 def _resolve_wheel(version: str, mirror: bool) -> str:
     if mirror:
         os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
@@ -86,7 +90,10 @@ def _resolve_wheel(version: str, mirror: bool) -> str:
 
     endpoint = os.environ.get("HF_ENDPOINT")
     api = HfApi(endpoint=endpoint) if endpoint else HfApi()
-    files = list(api.list_repo_files(REPO))
+    try:
+        files = list(api.list_repo_files(REPO))
+    except Exception as exc:
+        raise WheelLookupError(f"Could not list {REPO}: {exc}") from exc
     if filename not in files:
         options = "\n".join(f"  {name}" for name in _closest(files, filename)) or "  (no whl in the repository)"
         raise SystemExit(
@@ -132,7 +139,16 @@ def main() -> None:
         if not Path(wheel).is_file():
             raise SystemExit(f"Wheel not found: {wheel}")
     else:
-        wheel = _resolve_wheel(args.version, args.mirror)
+        try:
+            wheel = _resolve_wheel(args.version, args.mirror)
+        except WheelLookupError as exc:
+            if args.mirror:
+                raise SystemExit(str(exc)) from exc
+            print(f"{exc}\nRetrying via https://hf-mirror.com", flush=True)
+            try:
+                wheel = _resolve_wheel(args.version, True)
+            except WheelLookupError as exc2:
+                raise SystemExit(str(exc2)) from exc2
 
     before = {name: metadata.version(name) for name in ("transformers", "huggingface_hub") if _installed(name)}
     _run([sys.executable, "-m", "pip", "install", "--no-deps", wheel])
