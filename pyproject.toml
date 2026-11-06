@@ -1,7 +1,7 @@
 [project]
 name = "vitoom-nunchaku-comfy"
 description = "Load tonera vitoom-nunchaku SVDQuant DiT checkpoints in ComfyUI.Support flux-3 klein, Qwen-Image-2.1..."
-version = "0.1.1"
+version = "0.1.2"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 dependencies = [
