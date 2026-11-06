@@ -34,9 +34,9 @@
     },
     {
       "id": 2,
-      "type": "CLIPLoader",
+      "type": "VitoomNunchakuTextEncoderLoader",
       "pos": [40, 290],
-      "size": [480, 110],
+      "size": [560, 150],
       "flags": {},
       "order": 1,
       "mode": 0,
@@ -44,12 +44,17 @@
       "outputs": [
         {"name": "CLIP", "type": "CLIP", "slot_index": 0, "links": [2, 3]}
       ],
-      "title": "Qwen3-4B, do not select type flux",
-      "properties": {"Node name for S&R": "CLIPLoader"},
-      "widgets_values": ["z_image_turbo_qwen3_4b.safetensors", "stable_diffusion"],
+      "title": "Qwen3-4B, target Z-Image",
+      "properties": {"Node name for S&R": "VitoomNunchakuTextEncoderLoader"},
+      "widgets_values": [
+        "svdq-int4-Qwen3-4B-text-Nunchaku.safetensors [w4a16 flux2]",
+        "default",
+        "Z-Image"
+      ],
       "widgets_values_named": {
-        "clip_name": "z_image_turbo_qwen3_4b.safetensors",
-        "type": "stable_diffusion"
+        "model_name": "svdq-int4-Qwen3-4B-text-Nunchaku.safetensors [w4a16 flux2]",
+        "device": "default",
+        "target": "Z-Image"
       }
     },
     {

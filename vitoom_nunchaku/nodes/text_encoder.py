@@ -13,7 +13,7 @@ class VitoomNunchakuTextEncoderLoader(io.ComfyNode):
             node_id="VitoomNunchakuTextEncoderLoader",
             display_name="Vitoom Nunchaku Text Encoder",
             category="loaders/vitoom-nunchaku",
-            description="Load a Nunchaku Qwen text encoder. Qwen3-VL 4B outputs FLUX.3 CLIP (8 layers concatenated to 20480). Qwen3-VL 8B Instruct outputs Qwen-Image 2.1 CLIP (last layer, 4096). Text-only Qwen3 outputs FLUX.2 Klein CLIP (layers 9, 18, and 27; 7680 for 4B).",
+            description="Load a Nunchaku Qwen text encoder. Qwen3-VL 4B outputs FLUX.3 CLIP (8 layers concatenated to 20480). Qwen3-VL 8B Instruct outputs Qwen-Image 2.1 CLIP (last layer, 4096). Text-only Qwen3 outputs FLUX.2 Klein CLIP (layers 9, 18, and 27; 7680 for 4B). Set target to Z-Image to read the second-to-last layer of the same Qwen3-4B file (2560) for Z-Image-Turbo.",
             inputs=[
                 io.Combo.Input(
                     "model_name",
@@ -26,20 +26,26 @@ class VitoomNunchakuTextEncoderLoader(io.ComfyNode):
                     default="default",
                     tooltip="Defaults to ComfyUI's current GPU. Weights are W4A16 and are not subject to the W4A4 precision limits.",
                 ),
+                io.Combo.Input(
+                    "target",
+                    options=["auto", "Z-Image"],
+                    default="auto",
+                    tooltip="auto follows the file. Z-Image uses svdq-int4-Qwen3-4B-text-Nunchaku and returns the second-to-last layer for Z-Image-Turbo. Leave auto for FLUX.2 Klein.",
+                ),
             ],
             outputs=[
-                io.Clip.Output(tooltip="Connect FLUX.3 and FLUX.2 Klein to CLIP Text Encode. Connect Qwen-Image 2.1 to Text Encode Qwen Image 2.1."),
+                io.Clip.Output(tooltip="Connect FLUX.3, FLUX.2 Klein, and Z-Image to CLIP Text Encode. Connect Qwen-Image 2.1 to Text Encode Qwen Image 2.1."),
             ],
         )
 
     @classmethod
-    def execute(cls, model_name: str, device: str) -> io.NodeOutput:
+    def execute(cls, model_name: str, device: str, target: str = "auto") -> io.NodeOutput:
         if is_placeholder(model_name):
             raise RuntimeError(
                 "No Nunchaku Qwen text encoder found. Place the safetensors file in ~/weights or ComfyUI models/text_encoders."
             )
         path = resolve_text_encoder(model_name)
-        clip = load_nunchaku_clip(path, {"device": device})
+        clip = load_nunchaku_clip(path, {"device": device, "target": target})
         return io.NodeOutput(clip)
 
 

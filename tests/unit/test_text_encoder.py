@@ -10,9 +10,11 @@ from vitoom_nunchaku.runtime.text_encoder import (
     attention_mask_from_ids,
     flux3_position_ids,
     iter_text_encoder_files,
+    penultimate_hidden,
     stack_flux3_hidden,
     text_encoder_kind,
     text_encoder_recipe,
+    text_encoder_target,
     token_ids_from_weights,
     trim_qwen_image21,
 )
@@ -64,6 +66,53 @@ class TextEncoderRecipeTest(unittest.TestCase):
         self.assertEqual(text_encoder_recipe(flux2), "flux2")
         flux2["config"] = '{"text_config": {"hidden_size": 4096}}'
         self.assertEqual(text_encoder_recipe(flux2), "flux2")
+
+    def test_zimage_target_uses_qwen3_4b_text(self):
+        qwen3_4b = {
+            "model_class": "NunchakuQwenEncoderModel",
+            "config": '{"text_config": {"hidden_size": 2560}}',
+        }
+        self.assertEqual(text_encoder_target(qwen3_4b, "auto"), "flux2")
+        self.assertEqual(text_encoder_target(qwen3_4b, "Z-Image"), "zimage")
+        qwen3_8b = {
+            "model_class": "NunchakuQwenEncoderModel",
+            "config": '{"text_config": {"hidden_size": 4096}}',
+        }
+        with self.assertRaises(ValueError):
+            text_encoder_target(qwen3_8b, "Z-Image")
+        flux3 = {"config": '{"text_config": {"hidden_size": 2560}}'}
+        with self.assertRaises(ValueError):
+            text_encoder_target(flux3, "Z-Image")
+
+    def test_penultimate_layer_is_before_the_last(self):
+        class Layer(torch.nn.Module):
+            def __init__(self, value):
+                super().__init__()
+                self.value = value
+
+            def forward(self, x):
+                return x + self.value
+
+        class Model(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.layers = torch.nn.ModuleList([Layer(index) for index in range(4)])
+
+            def forward(self, x):
+                for layer in self.layers:
+                    x = layer(x)
+                return x
+
+        class Encoder(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.model = Model()
+
+            def forward(self, x):
+                return self.model(x)
+
+        hidden = penultimate_hidden(Encoder(), x=torch.zeros(1))
+        self.assertEqual(float(hidden), 3.0)
 
     def test_local_qwen3_4b_text_is_listed(self):
         path = os.path.expanduser(

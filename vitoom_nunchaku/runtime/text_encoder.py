@@ -4,6 +4,7 @@
 - Qwen3-VL, hidden size 4096: Qwen-Image 2.1, the last layer before the final RMSNorm.
 - Text-only Qwen3 (``NunchakuQwenEncoderModel``): FLUX.2 Klein, layers 9, 18, and 27.
   4B concatenates to 7680 and 8B concatenates to 12288.
+  The same 4B file can feed Z-Image-Turbo when the loader target is Z-Image: the second-to-last layer, width 2560.
 """
 
 from __future__ import annotations
@@ -63,6 +64,22 @@ def text_encoder_recipe(metadata: dict) -> str:
     if hidden == 4096:
         return "qwen_image21"
     raise ValueError(f"Cannot choose a text-encoder recipe from hidden_size={hidden}. Only 2560 (FLUX.3) and 4096 (Qwen-Image 2.1) are supported.")
+
+
+def text_encoder_target(metadata: dict, requested: str) -> str:
+    """``auto`` keeps the file recipe. ``Z-Image`` reads the second-to-last layer of text-only Qwen3-4B."""
+    recipe = text_encoder_recipe(metadata)
+    choice = str(requested or "auto").strip().lower().replace("_", "-")
+    if choice in ("", "auto"):
+        return recipe
+    if choice in ("z-image", "zimage"):
+        if recipe == "flux2" and text_encoder_hidden_size(metadata) == 2560:
+            return "zimage"
+        raise ValueError(
+            "Z-Image-Turbo only accepts the text-only Qwen3-4B encoder "
+            "(svdq-int4-Qwen3-4B-text-Nunchaku). This file belongs to another model."
+        )
+    raise ValueError(f"Unknown text encoder target {requested!r}. Use auto or Z-Image.")
 
 
 def iter_text_encoder_files() -> list[tuple[str, str]]:
@@ -264,6 +281,62 @@ def last_hidden_prenorm(encoder: torch.nn.Module, **forward_kwargs) -> torch.Ten
     return hidden
 
 
+def penultimate_hidden(encoder: torch.nn.Module, **forward_kwargs) -> torch.Tensor:
+    """Output of the second-to-last Qwen3 layer, before the final RMSNorm. Z-Image reads this 2560-wide state."""
+    layers = encoder.model.layers
+    if len(layers) < 2:
+        raise RuntimeError("Z-Image needs a Qwen3 text encoder with at least two layers.")
+    captured: dict[str, torch.Tensor] = {}
+
+    def _keep(_module, _inputs, output):
+        hidden = output[0] if isinstance(output, tuple) else output
+        if isinstance(hidden, torch.Tensor):
+            captured["hidden"] = hidden
+        return output
+
+    handle = layers[-2].register_forward_hook(_keep)
+    try:
+        encoder(**forward_kwargs)
+    finally:
+        handle.remove()
+    hidden = captured.get("hidden")
+    if hidden is None:
+        raise RuntimeError("The text encoder did not run its second-to-last layer, so the Z-Image embedding is unavailable.")
+    return hidden
+
+
+class VitoomZImageCond(torch.nn.Module):
+    """Z-Image-Turbo Qwen3-4B. encode_token_weights returns (batch, seq, 2560)."""
+
+    def __init__(self, encoder: torch.nn.Module):
+        super().__init__()
+        self.encoder = encoder
+        self.dtypes = {torch.bfloat16}
+        self.execution_device = None
+
+    def set_clip_options(self, options):
+        if "execution_device" in options:
+            self.execution_device = options["execution_device"]
+
+    def reset_clip_options(self):
+        self.execution_device = None
+
+    def encode_token_weights(self, token_weight_pairs):
+        sequences = token_weight_pairs["qwen3_4b"]
+        device = self.execution_device
+        if device is None:
+            device = next(self.encoder.parameters()).device
+        ids = _token_ids(sequences).to(device)
+        attention_mask = attention_mask_from_ids(ids)
+        hidden = penultimate_hidden(
+            self.encoder,
+            input_ids=ids,
+            attention_mask=attention_mask,
+            use_cache=False,
+        ).float()
+        return hidden, None, {"attention_mask": attention_mask}
+
+
 class VitoomFlux2Cond(torch.nn.Module):
     """Klein Qwen3. encode_token_weights returns (batch, seq, 3 * hidden)."""
 
@@ -432,10 +505,10 @@ def load_nunchaku_clip(path: str, options: dict | None = None, disable_dynamic: 
     ensure_nunchaku()
 
     metadata, _tensors = read_header(path)
-    recipe = text_encoder_recipe(metadata)
+    recipe = text_encoder_target(metadata, str(options.get("target") or "auto"))
     load_device = resolve_device(options.get("device") or "default")
     offload_device = model_management.text_encoder_offload_device()
-    if recipe == "flux2":
+    if recipe in ("flux2", "zimage"):
         from nunchaku import NunchakuQwenEncoderModel
 
         encoder = NunchakuQwenEncoderModel.from_pretrained(
@@ -455,7 +528,12 @@ def load_nunchaku_clip(path: str, options: dict | None = None, disable_dynamic: 
     for parameter in encoder.parameters():
         parameter.requires_grad_(False)
 
-    if recipe == "qwen_image21":
+    if recipe == "zimage":
+        from comfy.text_encoders.z_image import ZImageTokenizer
+
+        cond = VitoomZImageCond(encoder)
+        tokenizer = ZImageTokenizer()
+    elif recipe == "qwen_image21":
         from comfy.text_encoders.qwen_image21 import QwenImage21Tokenizer
 
         cond = VitoomQwenImage21Cond(encoder)
