@@ -606,12 +606,10 @@
       },
       "widgets_values": [
         "flux_fill_mask.png",
-        "image",
         "red"
       ],
       "widgets_values_named": {
         "image": "flux_fill_mask.png",
-        "upload": "image",
         "channel": "red"
       }
     }
